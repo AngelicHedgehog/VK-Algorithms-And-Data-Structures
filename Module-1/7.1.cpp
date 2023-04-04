@@ -1,9 +1,7 @@
-#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 void sortMSD(std::vector<std::string>& arr, std::size_t index = 0) {
@@ -55,23 +53,11 @@ void sortMSD(std::vector<std::string>& arr, std::size_t index = 0) {
 void run(std::istream& input, std::ostream& output) {
   std::vector<std::string> arr{};
 
-  input >> std::noskipws;
-
-  char sym{0};
   std::string word{};
-  while (input.eof()) {
-    input >> word;
+  while (input >> word) {
     arr.push_back(word);
-    // if (sym == '\0') {
-    //   arr.push_back(word);
-    //   word = "";
-    // } else {
-    //   word.push_back(sym);
-    // }
   }
-  // arr.push_back(word);
 
-  // std::sort(arr.begin(), arr.end());
   sortMSD(arr);
 
   for (const auto& el : arr) {
@@ -83,10 +69,10 @@ void test() {
   {
     std::stringstream input;
     std::stringstream output;
-    input << "\0";
+    input << "a\nb\0";
     run(input, output);
     std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "\0");
+    assert(output.str() == "a\nb\n\0");
   }
 }
 
