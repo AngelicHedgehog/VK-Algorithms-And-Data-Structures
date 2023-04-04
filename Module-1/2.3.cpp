@@ -22,7 +22,7 @@ void find_valid_range( int & begin, int & end, int size_arr, int * & arr, int va
     }
 }
 
-bool is_in_range( int begin, int end, int * & arr, int val )
+bool is_in_range( int begin, int end, const int * arr, int val )
 {
     int mid = 0;
     while( end - begin != 1 )

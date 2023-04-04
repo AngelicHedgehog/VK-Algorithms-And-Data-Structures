@@ -36,66 +36,51 @@ void merge_sort(T* arr, int n, Compare cmp = Compare()) {
   }
 }
 
-struct TimeSeg {
-  int t1;
-  int t2;
+struct Box {
+  Box(){};
+  ~Box() { delete[] cords; };
+  int* cords;
+  int i;
 };
 
 void run(std::istream& input, std::ostream& output) {
   int n;
   input >> n;
 
-  TimeSeg* time_segs = new TimeSeg[n];
-  for (int i = 0; i < n; ++i) input >> time_segs[i].t1 >> time_segs[i].t2;
-
-  merge_sort(time_segs, n, [](const TimeSeg& a, const TimeSeg& b) {
-    return a.t2 > b.t2
-               ? 1
-               : (a.t2 == b.t2 ? (a.t1 < b.t1 ? 1 : (a.t1 == b.t1 ? 0 : -1))
-                               : -1);  // сортировка в первую очередь по
-                                       // возрастанию времени ухода и во вторую
-                                       // по убыванию времени призода
-  });
-
-  if (n == 0) {
-    output << "0";
-    return;
+  Box* boxs = new Box[n];
+  int x, y, z;
+  for (int i = 0; i < n; ++i) {
+    input >> x >> y >> z;
+    boxs[i].i = i;
+    boxs[i].cords = new int[3]{x, y, z};
+    merge_sort(boxs[i].cords, 3);
   }
 
-  int res = 2;
-  int t1 = time_segs[0].t2 - 1;
-  int t2 = time_segs[0].t2;
-  for (int i = 1; i < n; ++i)
-    if (t2 < time_segs[i].t2) {
-      if (t2 < time_segs[i].t1) {
-        res += 2;
-        t1 = time_segs[i].t2 - 1;
-        t2 = time_segs[i].t2;
-      } else if (t1 < time_segs[i].t1) {
-        res += 1;
-        t1 = t2;
-        t2 = time_segs[i].t2;
-      }
-    }
+  merge_sort(boxs, n, [](const Box& a, const Box& b) {
+    return a.cords[0] >= b.cords[0] && a.cords[1] >= b.cords[1] &&
+                   a.cords[2] >= b.cords[2]
+               ? 1
+               : -1;
+  });
 
-  output << res;
+  for (int i = 0; i < n; ++i) output << boxs[i].i << ' ';
 
-  delete[] time_segs;
+  delete[] boxs;
 }
 
 void test() {
   {
     std::stringstream input;
     std::stringstream output;
-    input << "5\n1 10\n10 12\n1 10\n1 10\n23 24";
+    input << "3\n2 3 5\n1 1 1\n10 4 10";
     run(input, output);
     std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "5");
+    assert(output.str() == "1 0 2 ");
   }
 }
 
 int main() {
-  run(std::cin, std::cout);
-  //   test();
+  //   run(std::cin, std::cout);
+  test();
   return 0;
 };
