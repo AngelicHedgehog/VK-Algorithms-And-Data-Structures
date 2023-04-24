@@ -2,18 +2,17 @@
 #include <iostream>
 #include <sstream>
 
-template <class T>
-class CompareDefault {
- public:
-  int operator()(const T& a, const T& b) const {
+template <class T> class CompareDefault {
+public:
+  int operator()(const T &a, const T &b) const {
     return a > b ? 1 : (a == b ? 0 : -1);
   }
 };
 
 template <class T, class Compare = CompareDefault<T>>
-void merge_sort(T* arr, int n, Compare cmp = Compare()) {
+void merge_sort(T *arr, int n, Compare cmp = Compare()) {
   for (int size = 1; size < n; size *= 2) {
-    T* buf = new T[size * 2];
+    T *buf = new T[size * 2];
 
     for (int step = 0; step < n; step += size * 2) {
       int left = std::max(0, std::min(size, n - step));
@@ -29,7 +28,8 @@ void merge_sort(T* arr, int n, Compare cmp = Compare()) {
         else
           buf[--buf_i] = left ? arr[step + --left] : arr[step + --right + size];
 
-      for (int i = 0; i < size * 2 && i < n - step; ++i) arr[step + i] = buf[i];
+      for (int i = 0; i < size * 2 && i < n - step; ++i)
+        arr[step + i] = buf[i];
     }
 
     delete[] buf;
@@ -41,20 +41,21 @@ struct TimeSeg {
   int t2;
 };
 
-void run(std::istream& input, std::ostream& output) {
+void run(std::istream &input, std::ostream &output) {
   int n;
   input >> n;
 
-  TimeSeg* time_segs = new TimeSeg[n];
-  for (int i = 0; i < n; ++i) input >> time_segs[i].t1 >> time_segs[i].t2;
+  TimeSeg *time_segs = new TimeSeg[n];
+  for (int i = 0; i < n; ++i)
+    input >> time_segs[i].t1 >> time_segs[i].t2;
 
-  merge_sort(time_segs, n, [](const TimeSeg& a, const TimeSeg& b) {
+  merge_sort(time_segs, n, [](const TimeSeg &a, const TimeSeg &b) {
     return a.t2 > b.t2
                ? 1
                : (a.t2 == b.t2 ? (a.t1 < b.t1 ? 1 : (a.t1 == b.t1 ? 0 : -1))
-                               : -1);  // сортировка в первую очередь по
-                                       // возрастанию времени ухода и во вторую
-                                       // по убыванию времени призода
+                               : -1); // сортировка в первую очередь по
+                                      // возрастанию времени ухода и во вторую
+                                      // по убыванию времени призода
   });
 
   if (n == 0) {

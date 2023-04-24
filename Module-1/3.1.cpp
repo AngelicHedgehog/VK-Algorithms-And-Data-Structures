@@ -2,9 +2,8 @@
 #include <iostream>
 #include <sstream>
 
-template <typename T>
-class CycleQueue {
- public:
+template <typename T> class CycleQueue {
+public:
   CycleQueue() : buf_(nullptr), size_(0), len_(0), begin_(0), end_(0){};
   ~CycleQueue() { delete[] buf_; };
   CycleQueue(const CycleQueue &ref_queue) = delete;
@@ -12,15 +11,14 @@ class CycleQueue {
   void push(const T &value);
   bool isEmpty() const { return len_ == 0; };
 
- private:
+private:
   bool isFull() const { return len_ == size_; };
   void grow();
   T *buf_;
   int size_, len_, begin_, end_;
 };
 
-template <typename T>
-T CycleQueue<T>::pop() {
+template <typename T> T CycleQueue<T>::pop() {
   assert(!isEmpty());
 
   --len_;
@@ -32,17 +30,17 @@ T CycleQueue<T>::pop() {
   return buf_[begin_ - 1];
 }
 
-template <typename T>
-void CycleQueue<T>::push(const T &value) {
-  if (isFull()) grow();
+template <typename T> void CycleQueue<T>::push(const T &value) {
+  if (isFull())
+    grow();
 
   ++len_;
   buf_[end_] = value;
-  if (++end_ == size_) end_ = 0;
+  if (++end_ == size_)
+    end_ = 0;
 }
 
-template <typename T>
-void CycleQueue<T>::grow() {
+template <typename T> void CycleQueue<T>::grow() {
   int newSize = std::max(size_ * 2, 4);
   T *newBuf = new T[newSize];
   for (int i = begin_ - size_; i < 0; ++i) {
@@ -52,25 +50,25 @@ void CycleQueue<T>::grow() {
     newBuf[i] = buf_[i];
   }
 
-  if (size_) begin_ += newSize - size_;
+  if (size_)
+    begin_ += newSize - size_;
 
   delete[] buf_;
   buf_ = newBuf;
   size_ = newSize;
 }
 
-template <typename T>
-int exec(CycleQueue<T> &queue, int cmd, int arg) {
+template <typename T> int exec(CycleQueue<T> &queue, int cmd, int arg) {
   switch (cmd) {
-    case 2:
-      return (!queue.isEmpty() && queue.pop() == arg) ||
-                     (queue.isEmpty() && arg == -1)
-                 ? 0
-                 : 1;
-    case 3:
-    default:
-      queue.push(arg);
-      return 0;
+  case 2:
+    return (!queue.isEmpty() && queue.pop() == arg) ||
+                   (queue.isEmpty() && arg == -1)
+               ? 0
+               : 1;
+  case 3:
+  default:
+    queue.push(arg);
+    return 0;
   }
 }
 

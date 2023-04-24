@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 
-void sortMSD(std::vector<std::string>& arr, std::size_t index = 0) {
+void sortMSD(std::vector<std::string> &arr, std::size_t index = 0) {
   std::vector<std::vector<std::string>> alphabet{};
 
   int minSym{}, maxSym{}, sym{};
-  for (const auto& el : arr) {
+  for (const auto &el : arr) {
     if (index >= el.size()) {
       continue;
     }
@@ -30,7 +30,7 @@ void sortMSD(std::vector<std::string>& arr, std::size_t index = 0) {
 
   int finInd = -1;
 
-  for (const auto& next : arr) {
+  for (const auto &next : arr) {
     if (index >= next.length()) {
       arr[++finInd] = next;
     } else {
@@ -44,13 +44,13 @@ void sortMSD(std::vector<std::string>& arr, std::size_t index = 0) {
       sortMSD(alphabet[i], index);
     }
 
-    for (const auto& el : alphabet[i]) {
+    for (const auto &el : alphabet[i]) {
       arr[++finInd] = el;
     }
   }
 }
 
-void run(std::istream& input, std::ostream& output) {
+void run(std::istream &input, std::ostream &output) {
   std::vector<std::string> arr{};
 
   std::string word{};
@@ -60,7 +60,7 @@ void run(std::istream& input, std::ostream& output) {
 
   sortMSD(arr);
 
-  for (const auto& el : arr) {
+  for (const auto &el : arr) {
     output << el << '\n';
   }
 }
