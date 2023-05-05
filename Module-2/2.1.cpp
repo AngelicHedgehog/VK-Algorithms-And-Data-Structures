@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -15,7 +16,7 @@ template <class T, class Compare = CompareDefault<T>> class BinaryTree {
 public:
   inline BinaryTree(const Compare &cmp) : cmp_m(cmp) {}
 
-  inline ~BinaryTree() { delete root_m; }
+  ~BinaryTree();
   BinaryTree(BinaryTree const &other) = delete;
   auto operator=(BinaryTree const &other) -> BinaryTree & = delete;
   BinaryTree(BinaryTree &&other) noexcept = delete;
@@ -27,10 +28,6 @@ public:
 private:
   struct Node {
     inline Node(const T &key, Node *&parent) : key_m(key), parent_m(parent) {}
-    inline ~Node() {
-      delete left_m;
-      delete right_m;
-    }
     Node(Node const &other) = delete;
     auto operator=(Node const &other) -> Node & = delete;
     Node(Node &&other) noexcept = delete;
@@ -45,6 +42,21 @@ private:
   Node *root_m{};
   Compare cmp_m{};
 };
+
+template <class T, class Compare> BinaryTree<T, Compare>::~BinaryTree() {
+  std::queue<Node *> nodes{{root_m}};
+  Node *next{};
+
+  while (!nodes.empty()) {
+    next = nodes.front();
+    nodes.pop();
+    if (next != nullptr) {
+      nodes.push(next->left_m);
+      nodes.push(next->right_m);
+      delete next;
+    }
+  }
+}
 
 template <class T, class Compare>
 auto BinaryTree<T, Compare>::add(const T &key) -> void {

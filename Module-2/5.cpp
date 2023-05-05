@@ -1,24 +1,16 @@
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "Huffman.h"
 
-void run(std::istream &input, std::ostream &output) {}
-
-void test() {
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "");
+static void copyStream(IInputStream &input, IOutputStream &output) {
+  byte value;
+  while (input.Read(value)) {
+    output.Write(value);
   }
 }
 
-int main() {
-  //   run(std::cin, std::cout);
-  test();
-  return 0;
+void Encode(IInputStream &original, IOutputStream &compressed) {
+  copyStream(original, compressed);
+}
+
+void Decode(IInputStream &compressed, IOutputStream &original) {
+  copyStream(compressed, original);
 }

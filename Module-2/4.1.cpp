@@ -62,7 +62,7 @@ private:
       return right_m ? right_m->weight_m : 0;
     }
 
-    T key_m;
+    const T key_m;
     Node *parent_m;
     Node *left_m{};
     Node *right_m{};
@@ -83,9 +83,7 @@ auto AvlTree<T, Compare>::add(const T &key) -> int {
     return 0;
   }
 
-  int res = root_m->add(key);
-  // root_m->print();
-  return res;
+  return root_m->add(key);
 }
 
 template <class T, class Compare>
@@ -93,7 +91,6 @@ auto AvlTree<T, Compare>::remove(int index) -> void {
   assert(root_m && 0 <= index && index < root_m->weight_m);
 
   root_m->remove(index);
-  // root_m->print();
 }
 
 template <class T, class Compare>
@@ -342,28 +339,7 @@ void test() {
 }
 
 int main() {
-  run(std::cin, std::cout);
-  // test();
+  // run(std::cin, std::cout);
+  test();
   return 0;
 }
-
-// def gen(n):
-//     inp = str(n) + '\n'
-//     out = ''
-//     seq = []
-//     for _ in range(n):
-//         if len(seq):
-//             cmd = random.choice([1, 2])
-//         else:
-//             cmd = 1
-//         inp += str(cmd) + ' '
-//         if cmd == 1:
-//             arg = random.choice(list(set(range(1000)) - set(seq)))
-//             seq.append(arg)
-//             seq.sort(key=lambda x: -x)
-//             out += str(seq.index(arg)) + '\n'
-//         else:
-//             arg = random.choice(range(len(seq)))
-//             seq.pop(arg)
-//         inp += str(arg) + '\n'
-//     return inp, out
