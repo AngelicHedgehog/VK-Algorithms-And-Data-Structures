@@ -8,10 +8,7 @@ struct Node {
   int color;
   int size;
 
-  bool operator==(const Node &other) const {
-    return color == other.color && size == other.size &&
-           product_name == other.product_name;
-  }
+  bool operator==(const Node &other) const { return color == other.color && size == other.size && product_name == other.product_name; }
 };
 
 namespace std {
@@ -19,10 +16,7 @@ namespace std {
 template <> struct hash<Node> {
   std::size_t operator()(const Node &node) const {
 
-    return ((std::hash<std::string>()(node.product_name) ^
-             (std::hash<int>()(node.color) << 1)) >>
-            1) ^
-           (hash<int>()(node.size) << 1);
+    return ((std::hash<std::string>()(node.product_name) ^ (std::hash<int>()(node.color) << 1)) >> 1) ^ (hash<int>()(node.size) << 1);
   }
 };
 
@@ -34,8 +28,7 @@ void run(std::istream &input, std::ostream &output) {
 
   std::unordered_set<Node> modeSet{};
 
-  while (input >> operation >> nextNode.product_name >> nextNode.color >>
-         nextNode.size) {
+  while (input >> operation >> nextNode.product_name >> nextNode.color >> nextNode.size) {
     switch (operation) {
     case '+':
       output << (modeSet.insert(nextNode).second ? "OK\n" : "FAIL\n");

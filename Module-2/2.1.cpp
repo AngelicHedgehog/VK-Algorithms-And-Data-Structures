@@ -7,9 +7,7 @@
 
 template <class T> class CompareDefault {
 public:
-  int operator()(const T &a, const T &b) const {
-    return a > b ? 1 : (a == b ? 0 : -1);
-  }
+  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
 template <class T, class Compare = CompareDefault<T>> class BinaryTree {
@@ -58,8 +56,7 @@ template <class T, class Compare> BinaryTree<T, Compare>::~BinaryTree() {
   }
 }
 
-template <class T, class Compare>
-auto BinaryTree<T, Compare>::add(const T &key) -> void {
+template <class T, class Compare> auto BinaryTree<T, Compare>::add(const T &key) -> void {
   Node **curNode = &root_m;
   Node **parentNode = curNode;
 
@@ -75,8 +72,7 @@ auto BinaryTree<T, Compare>::add(const T &key) -> void {
   *curNode = new Node(key, *parentNode);
 }
 
-template <class T, class Compare>
-auto BinaryTree<T, Compare>::getKeysInOrder() const -> std::vector<T> {
+template <class T, class Compare> auto BinaryTree<T, Compare>::getKeysInOrder() const -> std::vector<T> {
   std::vector<T> keys{};
 
   Node *lastNode{};

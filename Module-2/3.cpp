@@ -10,15 +10,12 @@
 
 template <class T> class CompareDefault {
 public:
-  int operator()(const T &a, const T &b) const {
-    return a > b ? 1 : (a == b ? 0 : -1);
-  }
+  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
 template <class T, class Compare = CompareDefault<T>> class BTree {
 public:
-  inline BTree(const size_t minSize, const Compare &cmp = Compare())
-      : minSize_m(minSize), cmp_m(cmp) {}
+  inline BTree(const size_t minSize, const Compare &cmp = Compare()) : minSize_m(minSize), cmp_m(cmp) {}
 
   inline ~BTree() { delete root_m; }
   BTree(BTree const &other) = delete;
@@ -38,10 +35,8 @@ public:
 
 private:
   struct Node {
-    inline Node(const std::vector<T> &keys, Node *parent, Node *&owner,
-                const size_t &minSize, const Compare &cmp)
-        : keys_m(keys), parent_m(parent), owner_m(owner), minSize_m(minSize),
-          cmp_m(cmp) {}
+    inline Node(const std::vector<T> &keys, Node *parent, Node *&owner, const size_t &minSize, const Compare &cmp)
+        : keys_m(keys), parent_m(parent), owner_m(owner), minSize_m(minSize), cmp_m(cmp) {}
     inline ~Node() {
       for (const auto &child : children_m) {
         delete child;
@@ -84,8 +79,7 @@ private:
   const Compare &cmp_m;
 };
 
-template <class T, class Compare>
-auto BTree<T, Compare>::add(const T &key) -> void {
+template <class T, class Compare> auto BTree<T, Compare>::add(const T &key) -> void {
   if (root_m == nullptr) {
     root_m = new Node({}, nullptr, root_m, minSize_m, cmp_m);
   }
@@ -93,8 +87,7 @@ auto BTree<T, Compare>::add(const T &key) -> void {
   root_m->add(key);
 }
 
-template <class T, class Compare>
-auto BTree<T, Compare>::sliceView() const -> std::vector<std::vector<T>> {
+template <class T, class Compare> auto BTree<T, Compare>::sliceView() const -> std::vector<std::vector<T>> {
   if (root_m == nullptr) {
     return {};
   }
@@ -111,8 +104,7 @@ auto BTree<T, Compare>::sliceView() const -> std::vector<std::vector<T>> {
       nextNode = currSlice.front();
       currSlice.pop();
 
-      nextResult.insert(nextResult.end(), (*nextNode)->keys_m.begin(),
-                        (*nextNode)->keys_m.end());
+      nextResult.insert(nextResult.end(), (*nextNode)->keys_m.begin(), (*nextNode)->keys_m.end());
 
       for (auto &child : (*nextNode)->children_m) {
         nextSlice.push(&child);
@@ -128,8 +120,7 @@ auto BTree<T, Compare>::sliceView() const -> std::vector<std::vector<T>> {
   return result;
 }
 
-template <class T, class Compare>
-auto BTree<T, Compare>::Node::add(const T &key) -> void {
+template <class T, class Compare> auto BTree<T, Compare>::Node::add(const T &key) -> void {
   size_t index = 0;
   while (index != keys_m.size() && cmp_m(key, keys_m[index]) > 0) {
     ++index;
@@ -149,8 +140,7 @@ auto BTree<T, Compare>::Node::add(const T &key) -> void {
   children_m[index]->add(key);
 }
 
-template <class T, class Compare>
-auto BTree<T, Compare>::Node::checkSplit() -> void {
+template <class T, class Compare> auto BTree<T, Compare>::Node::checkSplit() -> void {
   if (keys_m.size() != minSize_m * 2 - 1) {
     return;
   }
@@ -161,24 +151,17 @@ auto BTree<T, Compare>::Node::checkSplit() -> void {
     owner_m = parent_m;
   }
 
-  int parentIndex = std::distance(parent_m->children_m.begin(),
-                                  std::find(parent_m->children_m.begin(),
-                                            parent_m->children_m.end(), this));
+  int parentIndex = std::distance(parent_m->children_m.begin(), std::find(parent_m->children_m.begin(), parent_m->children_m.end(), this));
 
-  Node *newRightNode = new Node(
-      std::vector<T>(std::next(keys_m.begin(), minSize_m), keys_m.end()),
-      parent_m, owner_m, minSize_m, cmp_m);
+  Node *newRightNode = new Node(std::vector<T>(std::next(keys_m.begin(), minSize_m), keys_m.end()), parent_m, owner_m, minSize_m, cmp_m);
 
-  parent_m->keys_m.insert(std::next(parent_m->keys_m.begin(), parentIndex),
-                          keys_m[minSize_m - 1]);
+  parent_m->keys_m.insert(std::next(parent_m->keys_m.begin(), parentIndex), keys_m[minSize_m - 1]);
   keys_m.resize(minSize_m - 1);
 
-  parent_m->children_m.insert(
-      std::next(parent_m->children_m.begin(), parentIndex + 1), newRightNode);
+  parent_m->children_m.insert(std::next(parent_m->children_m.begin(), parentIndex + 1), newRightNode);
 
   if (!children_m.empty()) {
-    for (auto it = std::next(children_m.begin(), minSize_m);
-         it != children_m.end(); ++it) {
+    for (auto it = std::next(children_m.begin(), minSize_m); it != children_m.end(); ++it) {
       newRightNode->children_m.push_back(*it);
       (*it)->parent_m = newRightNode;
     }
@@ -202,8 +185,7 @@ void run(std::istream &input, std::ostream &output) {
   // tree.print();
 
   for (const auto &slice : tree.sliceView()) {
-    std::copy(slice.begin(), slice.end(),
-              std::ostream_iterator<int>(output, " "));
+    std::copy(slice.begin(), slice.end(), std::ostream_iterator<int>(output, " "));
     output << '\n';
   }
 }

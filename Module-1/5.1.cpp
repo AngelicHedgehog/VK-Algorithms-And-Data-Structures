@@ -4,13 +4,10 @@
 
 template <class T> class CompareDefault {
 public:
-  int operator()(const T &a, const T &b) const {
-    return a > b ? 1 : (a == b ? 0 : -1);
-  }
+  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
-template <class T, class Compare = CompareDefault<T>>
-void merge_sort(T *arr, int n, Compare cmp = Compare()) {
+template <class T, class Compare = CompareDefault<T>> void merge_sort(T *arr, int n, Compare cmp = Compare()) {
   for (int size = 1; size < n; size *= 2) {
     T *buf = new T[size * 2];
 
@@ -21,10 +18,7 @@ void merge_sort(T *arr, int n, Compare cmp = Compare()) {
 
       while (left || right)
         if (left && right)
-          buf[--buf_i] =
-              cmp(arr[step + left - 1], arr[step + right + size - 1]) <= 0
-                  ? arr[step + --right + size]
-                  : arr[step + --left];
+          buf[--buf_i] = cmp(arr[step + left - 1], arr[step + right + size - 1]) <= 0 ? arr[step + --right + size] : arr[step + --left];
         else
           buf[--buf_i] = left ? arr[step + --left] : arr[step + --right + size];
 
@@ -50,12 +44,9 @@ void run(std::istream &input, std::ostream &output) {
     input >> time_segs[i].t1 >> time_segs[i].t2;
 
   merge_sort(time_segs, n, [](const TimeSeg &a, const TimeSeg &b) {
-    return a.t2 > b.t2
-               ? 1
-               : (a.t2 == b.t2 ? (a.t1 < b.t1 ? 1 : (a.t1 == b.t1 ? 0 : -1))
-                               : -1); // сортировка в первую очередь по
-                                      // возрастанию времени ухода и во вторую
-                                      // по убыванию времени призода
+    return a.t2 > b.t2 ? 1 : (a.t2 == b.t2 ? (a.t1 < b.t1 ? 1 : (a.t1 == b.t1 ? 0 : -1)) : -1); // сортировка в первую очередь по
+                                                                                                // возрастанию времени ухода и во вторую
+                                                                                                // по убыванию времени призода
   });
 
   if (n == 0) {

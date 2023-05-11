@@ -19,45 +19,41 @@ struct StringHasher {
 
 template <class T, class H> class HashTable {
 public:
-  inline explicit HashTable(int initialSize, const H &hasher)
-      : table_m(initialSize), hasher_m{hasher} {}
-
-  ~HashTable() = default;
-  HashTable(HashTable const &other) = default;
-  auto operator=(HashTable const &other) -> HashTable & = default;
-  HashTable(HashTable &&other) noexcept = default;
-  auto operator=(HashTable &&other) noexcept -> HashTable & = default;
+  inline explicit HashTable(int initialSize, const H &hasher) : table_m(initialSize), hasher_m{hasher} {}
 
   auto Has(const T &key) const -> bool;
   auto Add(const T &key) -> bool;
   auto Delete(const T &key) -> bool;
 
 private:
-  void growTable();
+  auto growTable() -> void;
+  auto rehashTable() -> void;
 
-  enum HashTableNodeStatus { Empty, Busy, Deleted };
+  enum class HashTableNodeStatus { Empty, Busy, Deleted };
 
   struct HashTableNode {
     T value{};
-    HashTableNodeStatus status{Empty};
+    HashTableNodeStatus status{HashTableNodeStatus::Empty};
   };
 
   std::vector<HashTableNode> table_m;
   const H &hasher_m;
-  size_t len_m{0};
+  size_t occupancy_m{0};
+  size_t countBusyNodes_m{0};
 };
 
-template <class T, class H>
-auto HashTable<T, H>::Has(const T &key) const -> bool {
-  const int hash = hasher_m(key, table_m.size());
+template <class T, class H> auto HashTable<T, H>::Has(const T &key) const -> bool {
+  const int hash{hasher_m(key, table_m.size())};
   int nodeIndex{};
 
   for (size_t i = 0; i < table_m.size(); ++i) {
     nodeIndex = (hash + i * (hash * 2 + 1)) % table_m.size();
-    if (table_m[nodeIndex].status == Empty) {
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Empty) {
       return false;
     }
-    if (table_m[nodeIndex].status == Busy && table_m[nodeIndex].value == key) {
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Busy && table_m[nodeIndex].value == key) {
       return true;
     }
   }
@@ -66,75 +62,92 @@ auto HashTable<T, H>::Has(const T &key) const -> bool {
 }
 
 template <class T, class H> auto HashTable<T, H>::Add(const T &key) -> bool {
-  const int hash = hasher_m(key, table_m.size());
-  int corNodeIndex{};
+  const int hash{hasher_m(key, table_m.size())};
   int nodeIndex{};
+  HashTableNodeStatus nodeOldStatus{};
 
   for (size_t i = 0; i < table_m.size(); ++i) {
     nodeIndex = (hash + i * (hash * 2 + 1)) % table_m.size();
-    if (table_m[nodeIndex].status != Busy) {
-      corNodeIndex = nodeIndex;
-    } else if (table_m[nodeIndex].value == key) {
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Empty) {
+      nodeOldStatus = table_m[nodeIndex].status;
+
+      table_m[nodeIndex].status = HashTableNodeStatus::Busy;
+      table_m[nodeIndex].value = key;
+
+      ++countBusyNodes_m;
+
+      if (nodeOldStatus == HashTableNodeStatus::Empty && ++occupancy_m * 4 >= table_m.size() * 3) {
+        growTable();
+      }
+
+      return true;
+    }
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Busy && table_m[nodeIndex].value == key) {
       return false;
     }
-    if (table_m[nodeIndex].status == Empty) {
-      break;
-    }
   }
 
-  table_m[corNodeIndex].status = Busy;
-  table_m[corNodeIndex].value = key;
-
-  if (++len_m * 4 >= table_m.size() * 3) {
-    growTable();
-  }
-
-  return true;
+  return false;
 }
 
 template <class T, class H> auto HashTable<T, H>::Delete(const T &key) -> bool {
-  const int hash = hasher_m(key, table_m.size());
+  const int hash{hasher_m(key, table_m.size())};
   int nodeIndex{};
 
   for (size_t i = 0; i < table_m.size(); ++i) {
     nodeIndex = (hash + i * (hash * 2 + 1)) % table_m.size();
-    if (table_m[nodeIndex].status == Empty) {
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Empty) {
       return false;
     }
-    if (table_m[nodeIndex].status == Busy && table_m[nodeIndex].value == key) {
-      break;
+
+    if (table_m[nodeIndex].status == HashTableNodeStatus::Busy && table_m[nodeIndex].value == key) {
+      table_m[nodeIndex].status = HashTableNodeStatus::Deleted;
+
+      if (--countBusyNodes_m * 4 <= table_m.size()) {
+        rehashTable();
+      }
+
+      return true;
     }
   }
 
-  table_m[nodeIndex].status = Deleted;
-  table_m[nodeIndex].value = "";
-
-  return true;
+  return false;
 }
 
 template <class T, class H> auto HashTable<T, H>::growTable() -> void {
-  size_t newTableSize = table_m.size() * 2;
-  std::vector<HashTableNode> newTable(newTableSize);
+  table_m.resize(table_m.size() * 2);
+  rehashTable();
+}
+
+template <class T, class H> auto HashTable<T, H>::rehashTable() -> void {
+  std::vector<HashTableNode> newTable{table_m.size()};
+  int newOccupancy{0};
   int newHash{};
   int nodeIndex{};
 
   for (const auto &node : table_m) {
-    if (node.status != Busy) {
+    if (node.status != HashTableNodeStatus::Busy) {
       continue;
     }
-    newHash = hasher_m(node.value, newTableSize);
 
-    for (size_t i = 0; i < newTableSize; ++i) {
-      nodeIndex = (newHash + i * (newHash * 2 + 1)) % newTableSize;
-      if (newTable[nodeIndex].status != Empty) {
-        continue;
+    newHash = hasher_m(node.value, table_m.size());
+    ++newOccupancy;
+
+    for (size_t i = 0; i < newTable.size(); ++i) {
+      nodeIndex = (newHash + i * (newHash * 2 + 1)) % newTable.size();
+
+      if (newTable[nodeIndex].status == HashTableNodeStatus::Empty) {
+        newTable[nodeIndex] = node;
+        break;
       }
-      break;
     }
-    newTable[nodeIndex] = node;
   }
 
   table_m = std::move(newTable);
+  occupancy_m = newOccupancy;
 }
 
 void run(std::istream &input, std::ostream &output) {
@@ -142,7 +155,7 @@ void run(std::istream &input, std::ostream &output) {
   std::string value{};
   bool result{};
 
-  StringHasher h;
+  StringHasher h{};
   HashTable<std::string, StringHasher> table{8, h};
 
   while (input >> operation >> value) {
@@ -166,8 +179,16 @@ void run(std::istream &input, std::ostream &output) {
 
 void test() {
   {
-    std::stringstream input;
-    std::stringstream output;
+    std::stringstream input{};
+    std::stringstream output{};
+    input << "+ hello\n+ bye\n? bye\n+ bye\n- bye\n? bye\n? hello";
+    run(input, output);
+    std::cout << ">>> " << output.str() << std::endl;
+    assert(output.str() == "OK\nOK\nOK\nFAIL\nOK\nFAIL\nOK\n");
+  }
+  {
+    std::stringstream input{};
+    std::stringstream output{};
     input << "- 18\n- 4\n? 0\n- 1\n+ 17\n- 11\n? 5\n? 5\n+ 11\n- 16\n? 8\n- "
              "17\n? 11\n- 9\n+ 9\n? 16\n? 7\n? 10\n+ 11\n+ 7\n+ 7\n- 9\n? "
              "11\n- 4\n? 17\n- 2\n? 3\n? 18\n- 4\n? 0\n? 6\n- 1\n+ 14\n+ 3\n+ "
@@ -177,13 +198,12 @@ void test() {
              "10\n- 5\n? 0\n? 11\n? 16\n+ 19\n- 1\n+ 11";
     run(input, output);
     std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() ==
-           "FAIL\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nFAIL\nOK\nO"
-           "K\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nOK\nOK\nFAIL\nFAIL\n"
-           "FAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nFAIL\nFAIL\nF"
-           "AIL\nOK\nOK\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nOK\nFAIL\nFAIL\nOK\nFAIL"
-           "\nFAIL\nOK\nOK\nOK\nOK\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nO"
-           "K\nOK\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nOK\nOK\nFAIL\n");
+    assert(output.str() == "FAIL\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nFAIL\nOK\nO"
+                           "K\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nOK\nOK\nFAIL\nFAIL\n"
+                           "FAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nFAIL\nFAIL\nF"
+                           "AIL\nOK\nOK\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nOK\nFAIL\nFAIL\nOK\nFAIL"
+                           "\nFAIL\nOK\nOK\nOK\nOK\nFAIL\nFAIL\nFAIL\nFAIL\nFAIL\nOK\nOK\nOK\nO"
+                           "K\nOK\nFAIL\nOK\nFAIL\nFAIL\nFAIL\nOK\nFAIL\nOK\nOK\nFAIL\n");
   }
 }
 

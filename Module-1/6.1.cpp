@@ -4,13 +4,10 @@
 
 template <class T> class CompareDefault {
 public:
-  int operator()(const T &a, const T &b) const {
-    return a > b ? 1 : (a == b ? 0 : -1);
-  }
+  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
-template <class T, class Compare = CompareDefault<T>>
-int partition(T *a, int n, Compare cmp = Compare()) {
+template <class T, class Compare = CompareDefault<T>> int partition(T *a, int n, Compare cmp = Compare()) {
   int cmp_first_last = cmp(a[0], a[n - 1]);
   int cmp_first_mid = cmp(a[0], a[n / 2]);
   int cmp_mid_last = cmp(a[n / 2], a[n - 1]);
@@ -30,8 +27,7 @@ int partition(T *a, int n, Compare cmp = Compare()) {
   return i - 1;
 }
 
-template <class T, class Compare = CompareDefault<T>>
-T findKStat(T *a, int n, int k, Compare cmp = Compare()) {
+template <class T, class Compare = CompareDefault<T>> T findKStat(T *a, int n, int k, Compare cmp = Compare()) {
   int pivot_pos = partition(a, n, cmp);
 
   for (; pivot_pos != k; pivot_pos = partition(a, n, cmp))

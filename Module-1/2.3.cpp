@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 
-
 void find_valid_range(int &begin, int &end, int size_arr, int *&arr, int val) {
   if (end > size_arr) {
     end = size_arr - 1;
@@ -32,8 +31,7 @@ bool is_in_range(int begin, int end, const int *arr, int val) {
   return arr[begin] == val || arr[end] == val;
 }
 
-void find_intersect(int size_a, int size_b, int *&arr_a, int *&arr_b,
-                    bool *&result) {
+void find_intersect(int size_a, int size_b, int *&arr_a, int *&arr_b, bool *&result) {
   int start = 0;
   int stop = 1;
   for (int i = 0; i < size_b; ++i) {

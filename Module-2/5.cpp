@@ -7,10 +7,6 @@ static void copyStream(IInputStream &input, IOutputStream &output) {
   }
 }
 
-void Encode(IInputStream &original, IOutputStream &compressed) {
-  copyStream(original, compressed);
-}
+void Encode(IInputStream &original, IOutputStream &compressed) { copyStream(original, compressed); }
 
-void Decode(IInputStream &compressed, IOutputStream &original) {
-  copyStream(compressed, original);
-}
+void Decode(IInputStream &compressed, IOutputStream &original) { copyStream(compressed, original); }

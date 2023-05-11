@@ -61,10 +61,7 @@ template <typename T> void CycleQueue<T>::grow() {
 template <typename T> int exec(CycleQueue<T> &queue, int cmd, int arg) {
   switch (cmd) {
   case 2:
-    return (!queue.isEmpty() && queue.pop() == arg) ||
-                   (queue.isEmpty() && arg == -1)
-               ? 0
-               : 1;
+    return (!queue.isEmpty() && queue.pop() == arg) || (queue.isEmpty() && arg == -1) ? 0 : 1;
   case 3:
   default:
     queue.push(arg);

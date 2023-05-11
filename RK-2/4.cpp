@@ -6,9 +6,7 @@
 
 template <class T> class CompareDefault {
 public:
-  int operator()(const T &a, const T &b) const {
-    return a > b ? 1 : (a == b ? 0 : -1);
-  }
+  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
 template <class T, class Compare = CompareDefault<T>> class AvlTree {
@@ -29,8 +27,7 @@ public:
 
 private:
   struct Node {
-    inline Node(const T &key, Node *parent, Node *&owner, const Compare &cmp)
-        : key_m(key), parent_m(parent), owner_m(owner), cmp_m(cmp) {}
+    inline Node(const T &key, Node *parent, Node *&owner, const Compare &cmp) : key_m(key), parent_m(parent), owner_m(owner), cmp_m(cmp) {}
     inline ~Node() {
       delete left_m;
       delete right_m;
@@ -55,18 +52,10 @@ private:
     auto bigRightRotate() -> void;
     auto bigLeftRotate() -> void;
 
-    inline auto leftHeight() const -> int {
-      return left_m ? left_m->heigth_m : 0;
-    }
-    inline auto rightHeight() const -> int {
-      return right_m ? right_m->heigth_m : 0;
-    }
-    inline auto leftWeight() const -> int {
-      return left_m ? left_m->weight_m : 0;
-    }
-    inline auto rightWeight() const -> int {
-      return right_m ? right_m->weight_m : 0;
-    }
+    inline auto leftHeight() const -> int { return left_m ? left_m->heigth_m : 0; }
+    inline auto rightHeight() const -> int { return right_m ? right_m->heigth_m : 0; }
+    inline auto leftWeight() const -> int { return left_m ? left_m->weight_m : 0; }
+    inline auto rightWeight() const -> int { return right_m ? right_m->weight_m : 0; }
 
     const T key_m;
     Node *parent_m;
@@ -82,8 +71,7 @@ private:
   const Compare &cmp_m;
 };
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::add(const T &key) -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::add(const T &key) -> void {
   if (root_m == nullptr) {
     root_m = new Node(key, nullptr, root_m, cmp_m);
     return;
@@ -92,15 +80,13 @@ auto AvlTree<T, Compare>::add(const T &key) -> void {
   root_m->add(key);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::remove(const T &key) -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::remove(const T &key) -> void {
   if (root_m) {
     root_m->remove(key);
   }
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::exists(const T &key) -> bool {
+template <class T, class Compare> auto AvlTree<T, Compare>::exists(const T &key) -> bool {
   if (root_m == nullptr) {
     return false;
   }
@@ -108,16 +94,14 @@ auto AvlTree<T, Compare>::exists(const T &key) -> bool {
   return root_m->exists(key);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::next(const T &key) -> const T * {
+template <class T, class Compare> auto AvlTree<T, Compare>::next(const T &key) -> const T * {
   if (root_m == nullptr) {
     return nullptr;
   }
 
   return root_m->next(key);
 }
-template <class T, class Compare>
-auto AvlTree<T, Compare>::prev(const T &key) -> const T * {
+template <class T, class Compare> auto AvlTree<T, Compare>::prev(const T &key) -> const T * {
   if (root_m == nullptr) {
     return nullptr;
   }
@@ -125,18 +109,13 @@ auto AvlTree<T, Compare>::prev(const T &key) -> const T * {
   return root_m->prev(key);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::correctHeigth() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::correctHeigth() -> void {
   heigth_m = std::max(leftHeight(), rightHeight()) + 1;
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::correctWeight() -> void {
-  weight_m = leftWeight() + rightWeight() + 1;
-}
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::correctWeight() -> void { weight_m = leftWeight() + rightWeight() + 1; }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::add(const T &key) -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::add(const T &key) -> void {
   if (cmp_m(key_m, key) == 0) {
     return;
   }
@@ -161,8 +140,7 @@ auto AvlTree<T, Compare>::Node::add(const T &key) -> void {
   balanceTree();
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::remove(const T &key) -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::remove(const T &key) -> void {
   if (cmp_m(key_m, key) > 0) {
     if (left_m) {
       left_m->remove(key);
@@ -245,8 +223,7 @@ auto AvlTree<T, Compare>::Node::remove(const T &key) -> void {
   delete this;
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::exists(const T &key) -> bool {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::exists(const T &key) -> bool {
   if (cmp_m(key_m, key) == 0) {
     return true;
   }
@@ -258,8 +235,7 @@ auto AvlTree<T, Compare>::Node::exists(const T &key) -> bool {
   return right_m && right_m->exists(key);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::next(const T &key) -> const T * {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::next(const T &key) -> const T * {
   const T *nextResult{};
   if (cmp_m(key_m, key) > 0) {
     if (left_m && (nextResult = left_m->next(key)) && *nextResult > key_m) {
@@ -272,8 +248,7 @@ auto AvlTree<T, Compare>::Node::next(const T &key) -> const T * {
   return (right_m ? right_m->next(key) : nullptr);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::prev(const T &key) -> const T * {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::prev(const T &key) -> const T * {
   const T *nextResult{};
   if (cmp_m(key_m, key) < 0) {
     if (right_m && (nextResult = right_m->next(key)) && *nextResult < key_m) {
@@ -286,21 +261,16 @@ auto AvlTree<T, Compare>::Node::prev(const T &key) -> const T * {
   return (left_m ? left_m->next(key) : nullptr);
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::balanceTree() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::balanceTree() -> void {
   correctHeigth();
 
-  if (left_m && leftHeight() == rightHeight() + 2 &&
-      left_m->leftHeight() >= left_m->rightHeight()) {
+  if (left_m && leftHeight() == rightHeight() + 2 && left_m->leftHeight() >= left_m->rightHeight()) {
     smallRightRotate();
-  } else if (right_m && leftHeight() + 2 == rightHeight() &&
-             right_m->leftHeight() <= right_m->rightHeight()) {
+  } else if (right_m && leftHeight() + 2 == rightHeight() && right_m->leftHeight() <= right_m->rightHeight()) {
     smallLeftRotate();
-  } else if (left_m && leftHeight() == rightHeight() + 2 &&
-             left_m->leftHeight() < left_m->rightHeight()) {
+  } else if (left_m && leftHeight() == rightHeight() + 2 && left_m->leftHeight() < left_m->rightHeight()) {
     bigRightRotate();
-  } else if (right_m && leftHeight() + 2 == rightHeight() &&
-             right_m->leftHeight() > right_m->rightHeight()) {
+  } else if (right_m && leftHeight() + 2 == rightHeight() && right_m->leftHeight() > right_m->rightHeight()) {
     bigLeftRotate();
   }
 
@@ -314,8 +284,7 @@ auto AvlTree<T, Compare>::Node::balanceTree() -> void {
   correctWeight();
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::smallRightRotate() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::smallRightRotate() -> void {
   if (parent_m == nullptr) {
     owner_m = left_m;
   } else if (parent_m->left_m == this) {
@@ -332,8 +301,7 @@ auto AvlTree<T, Compare>::Node::smallRightRotate() -> void {
   parent_m->right_m = this;
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::smallLeftRotate() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::smallLeftRotate() -> void {
   if (parent_m == nullptr) {
     owner_m = right_m;
   } else if (parent_m->left_m == this) {
@@ -350,14 +318,12 @@ auto AvlTree<T, Compare>::Node::smallLeftRotate() -> void {
   parent_m->left_m = this;
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::bigRightRotate() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::bigRightRotate() -> void {
   left_m->smallLeftRotate();
   smallRightRotate();
 }
 
-template <class T, class Compare>
-auto AvlTree<T, Compare>::Node::bigLeftRotate() -> void {
+template <class T, class Compare> auto AvlTree<T, Compare>::Node::bigLeftRotate() -> void {
   right_m->smallRightRotate();
   smallLeftRotate();
 }

@@ -72,8 +72,7 @@ private:
   void siftUp(int i);
 };
 
-template <typename T, typename Compare>
-void Heap<T, Compare>::insert(const T &element) {
+template <typename T, typename Compare> void Heap<T, Compare>::insert(const T &element) {
   arr.append(element);
   siftUp(arr.size() - 1);
   // std::cout << "after insert: ";
@@ -124,8 +123,7 @@ template <typename T, typename Compare> void Heap<T, Compare>::siftUp(int i) {
 
 struct Element {
   Element() : value(NULL), values_left(-1), array_index(-1){};
-  Element(int v, int v_l, int a_i)
-      : value(v), values_left(v_l), array_index(a_i){};
+  Element(int v, int v_l, int a_i) : value(v), values_left(v_l), array_index(a_i){};
   int value;
   int values_left;
   int array_index;
@@ -187,11 +185,9 @@ struct Test {
 
 void test() {
   int c_tests = 3;
-  Test *tests = new Test[c_tests]{
-      {"3\t1  6\t2  50 90\t3  1 10 70\t", "1 6 10 50 70 90 "},
-      {"4\t0\t0\t2  63 143\t3  53 57 102\t", "53 57 63 102 143 "},
-      {"4\t4  54 141 152 194\t2  74 168\t2  45 126\t2  93 108\t",
-       "45 54 74 93 108 126 141 152 168 194 "}};
+  Test *tests = new Test[c_tests]{{"3\t1  6\t2  50 90\t3  1 10 70\t", "1 6 10 50 70 90 "},
+                                  {"4\t0\t0\t2  63 143\t3  53 57 102\t", "53 57 63 102 143 "},
+                                  {"4\t4  54 141 152 194\t2  74 168\t2  45 126\t2  93 108\t", "45 54 74 93 108 126 141 152 168 194 "}};
   for (int i = 0; i < c_tests; ++i) {
     std::stringstream input;
     std::stringstream output;

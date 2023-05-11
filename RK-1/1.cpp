@@ -2,14 +2,15 @@
 #include <iostream>
 #include <sstream>
 
-int bin_find(int* arr, int n, int k) {
+int bin_find(int *arr, int n, int k) {
   int l = 0;
   int r = n - 1;
   int i;
 
   while (l <= r) {
     i = (l + r) << 1;
-    if (arr[i] == k) return i;
+    if (arr[i] == k)
+      return i;
     if (arr[i] < k)
       l = i + 1;
     else
@@ -19,12 +20,13 @@ int bin_find(int* arr, int n, int k) {
   return i;
 }
 
-void run(std::istream& input, std::ostream& output) {
+void run(std::istream &input, std::ostream &output) {
   int n;
   input >> n;
 
-  int* arr = new int[n];
-  for (int i = 0; i < n; ++i) input >> arr[i];
+  int *arr = new int[n];
+  for (int i = 0; i < n; ++i)
+    input >> arr[i];
 
   int k;
   input >> k;
