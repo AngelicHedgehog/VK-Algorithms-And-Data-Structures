@@ -1,405 +1,383 @@
 #include <cassert>
+#include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <vector>
 
-template <class T> class CompareDefault {
-public:
-  int operator()(const T &a, const T &b) const { return a > b ? 1 : (a == b ? 0 : -1); }
+template <class T>
+class CompareDefault {
+ public:
+    int operator()(const T& a, const T& b) const { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
-template <class T, class Compare = CompareDefault<T>> class AvlTree {
-public:
-  inline AvlTree(const Compare &cmp = Compare()) : cmp_m(cmp) {}
+template <class T, class Compare = CompareDefault<T>>
+class AvlTree {
+ public:
+    inline AvlTree(const Compare& cmp = Compare()) noexcept : m_root(new Node(cmp)), m_cmp(cmp) {}
 
-  inline ~AvlTree() { delete root_m; }
-  AvlTree(AvlTree const &other) = delete;
-  auto operator=(AvlTree const &other) -> AvlTree & = delete;
-  AvlTree(AvlTree &&other) noexcept = delete;
-  auto operator=(AvlTree &&other) noexcept -> AvlTree & = delete;
+    inline ~AvlTree() noexcept { delete m_root; }
+    AvlTree(AvlTree const& other) = delete;
+    auto operator=(AvlTree const& other) -> AvlTree& = delete;
+    AvlTree(AvlTree&& other) noexcept = delete;
+    auto operator=(AvlTree&& other) noexcept -> AvlTree& = delete;
 
-  auto add(const T &key) -> int;
-  auto remove(int index) -> void;
-
-  auto print() -> void {
-    if (root_m) {
-      root_m->print("");
-    }
-  }
-
-private:
-  struct Node {
-    inline Node(const T &key, Node *parent, Node *&owner, const Compare &cmp) : key_m(key), parent_m(parent), owner_m(owner), cmp_m(cmp) {}
-    inline ~Node() {
-      delete left_m;
-      delete right_m;
-    }
-    Node(Node const &other) = delete;
-    auto operator=(Node const &other) -> Node & = delete;
-    Node(Node &&other) noexcept = delete;
-    auto operator=(Node &&other) noexcept -> Node & = delete;
-
-    auto correctHeigth() -> void;
-    auto correctWeight() -> void;
-
-    auto add(const T &key) -> int;
+    [[nodiscard]] auto add(const T& key) -> int;
     auto remove(int index) -> void;
 
-    auto check() -> void {
-      if (!(left_m == nullptr || left_m->parent_m == this)) {
-        assert(false);
-      }
-      if (left_m) {
-        left_m->check();
-      }
-      if (!(right_m == nullptr || right_m->parent_m == this)) {
-        assert(false);
-      }
-      if (right_m) {
-        right_m->check();
-      }
-    }
+    inline auto print() const noexcept -> void { m_root->print(""); }
 
-    auto print(const std::string &indent) -> void {
-      check();
+ private:
+    struct Node {
+        inline Node(const Compare& cmp) : isLeaf(true), heigth(0), weight(0), cmp(cmp) {}
+        inline Node(const T& key, const Compare& cmp) : key(key), left(new Node(cmp)), right(new Node(cmp)), cmp(cmp) {}
+        inline ~Node() {
+            delete left;
+            delete right;
+        }
+        Node(Node const& other) = delete;
+        auto operator=(Node const& other) -> Node& = delete;
+        Node(Node&& other) noexcept = delete;
+        auto operator=(Node&& other) noexcept -> Node& = delete;
 
-      if (left_m) {
-        left_m->print(indent + "    ");
-      }
+        auto correctHeigth() noexcept -> void;
+        auto correctWeight() noexcept -> void;
 
-      std::cout << indent << key_m << '\n';
+        [[nodiscard]] auto find(const T& key) const -> int;
+        [[nodiscard]] auto add(const T& key) -> int;
+        auto remove(int index) -> void;
 
-      if (right_m) {
-        right_m->print(indent + "    ");
-      }
-    }
+        inline auto print(const std::string& indent) noexcept -> void {
+            if (left) {
+                left->print(indent + "    ");
+            }
 
-    auto balanceTree() -> void;
-    auto smallRightRotate() -> void;
-    auto smallLeftRotate() -> void;
-    auto bigRightRotate() -> void;
-    auto bigLeftRotate() -> void;
+            std::cout << indent << key << '\n';
 
-    inline auto leftHeight() const -> int { return left_m ? left_m->heigth_m : 0; }
-    inline auto rightHeight() const -> int { return right_m ? right_m->heigth_m : 0; }
-    inline auto leftWeight() const -> int { return left_m ? left_m->weight_m : 0; }
-    inline auto rightWeight() const -> int { return right_m ? right_m->weight_m : 0; }
+            if (right) {
+                right->print(indent + "    ");
+            }
+        }
 
-    const T key_m;
-    Node *parent_m;
-    Node *left_m{};
-    Node *right_m{};
-    int heigth_m{1};
-    int weight_m{1};
-    Node *&owner_m;
-    const Compare &cmp_m;
-  };
+        auto balanceTree() noexcept -> void;
+        auto smallLeftRotate() noexcept -> void;
+        auto smallRightRotate() noexcept -> void;
+        auto bigLeftRotate() noexcept -> void;
+        auto bigRightRotate() noexcept -> void;
 
-  Node *root_m{};
-  const Compare &cmp_m;
+        [[nodiscard]] inline auto leftHeight() const noexcept -> int { return !left->isLeaf ? left->heigth : 0; }
+        [[nodiscard]] inline auto rightHeight() const noexcept -> int { return !right->isLeaf ? right->heigth : 0; }
+        [[nodiscard]] inline auto balanceFactor() const noexcept -> int { return leftHeight() - rightHeight(); }
+
+        [[nodiscard]] inline auto leftWeight() const noexcept -> int { return !left->isLeaf ? left->weight : 0; }
+        [[nodiscard]] inline auto rightWeight() const noexcept -> int { return !right->isLeaf ? right->weight : 0; }
+
+        inline auto swap(Node* firstNode, Node* secondNode) -> void {
+            std::swap(firstNode->isLeaf, secondNode->isLeaf);
+            std::swap(firstNode->key, secondNode->key);
+            std::swap(firstNode->left, secondNode->left);
+            std::swap(firstNode->right, secondNode->right);
+            std::swap(firstNode->heigth, secondNode->heigth);
+            std::swap(firstNode->weight, secondNode->weight);
+        }
+
+        bool isLeaf{false};
+        T key{};
+        Node* left{nullptr};
+        Node* right{nullptr};
+        int heigth{1};
+        int weight{1};
+        const Compare& cmp;
+    };
+
+    Node* m_root{nullptr};
+    const Compare& m_cmp;
 };
 
-template <class T, class Compare> auto AvlTree<T, Compare>::add(const T &key) -> int {
-  if (root_m == nullptr) {
-    root_m = new Node(key, nullptr, root_m, cmp_m);
-    return 0;
-  }
-
-  return root_m->add(key);
-}
-
-template <class T, class Compare> auto AvlTree<T, Compare>::remove(int index) -> void {
-  assert(root_m && 0 <= index && index < root_m->weight_m);
-
-  root_m->remove(index);
-}
-
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::correctHeigth() -> void {
-  std::cout << "correctHeigth\n";
-  check();
-
-  heigth_m = std::max(leftHeight(), rightHeight()) + 1;
-}
-
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::correctWeight() -> void {
-  std::cout << "correctWeight\n";
-  check();
-
-  weight_m = leftWeight() + rightWeight() + 1;
-}
-
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::add(const T &key) -> int {
-  std::cout << "add\n";
-  check();
-
-  assert(cmp_m(key_m, key) != 0);
-
-  if (cmp_m(key, key_m) < 0) {
-    if (left_m) {
-      return left_m->add(key) + rightWeight() + 1;
+template <class T, class Compare>
+auto AvlTree<T, Compare>::add(const T& key) -> int {
+    if (m_root->isLeaf) {
+        delete m_root;
+        m_root = new Node(key, m_cmp);
+        return 0;
     }
 
-    left_m = new Node(key, this, owner_m, cmp_m);
-    int ret = rightWeight() + 1;
+    return m_root->add(key);
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::remove(int index) -> void {
+    m_root->remove(index);
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::correctHeigth() noexcept -> void {
+    if (isLeaf) {
+        return;
+    }
+
+    heigth = std::max(leftHeight(), rightHeight()) + 1;
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::correctWeight() noexcept -> void {
+    if (isLeaf) {
+        return;
+    }
+
+    weight = leftWeight() + rightWeight() + 1;
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::find(const T& findKey) const -> int {
+    assert(!isLeaf);
+
+    if (cmp(findKey, key) < 0) {
+        return left->find(findKey) + rightWeight() + 1;
+    }
+    if (cmp(findKey, key) > 0) {
+        return right->find(findKey);
+    }
+
+    return rightWeight();
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::add(const T& addKey) -> int {
+    assert(cmp(addKey, key) != 0);
+
+    if (isLeaf) {
+        auto* newNode = new Node(addKey, cmp);
+        swap(this, newNode);
+        delete newNode;
+        return 0;
+    }
+
+    int resInd{};
+
+    if (cmp(addKey, key) < 0) {
+        resInd = left->add(addKey) + rightWeight() + 1;
+    } else {
+        resInd = right->add(addKey);
+    }
     balanceTree();
-    return ret;
-  }
-
-  if (right_m) {
-    return right_m->add(key);
-  }
-
-  right_m = new Node(key, this, owner_m, cmp_m);
-  balanceTree();
-
-  return 0;
+    return resInd;
 }
 
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::remove(int index) -> void {
-  std::cout << "remove\n";
-  check();
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::remove(int index) -> void {
+    assert(!isLeaf);
 
-  if (index > rightWeight()) {
-    return left_m->remove(index - rightWeight() - 1);
-  }
-  if (index < rightWeight()) {
-    return right_m->remove(index);
-  }
-
-  if (left_m == nullptr) {
-    if (parent_m == nullptr) {
-      owner_m = right_m;
-    } else if (parent_m->left_m == this) {
-      parent_m->left_m = right_m;
-    } else {
-      parent_m->right_m = right_m;
+    if (index > rightWeight()) {
+        left->remove(index - rightWeight() - 1);
+        return balanceTree();
+    }
+    if (index < rightWeight()) {
+        right->remove(index);
+        return balanceTree();
     }
 
-    if (right_m) {
-      right_m->parent_m = parent_m;
+    Node* oldLeft = left;
+    Node* oldRight = right;
 
-      right_m->balanceTree();
-    } else if (parent_m) {
-      parent_m->balanceTree();
+    if (oldLeft->isLeaf) {
+        swap(this, oldRight);
+        oldRight->right = nullptr;
+        delete oldRight;
+        balanceTree();
+        return;
     }
 
-    right_m = nullptr;
-    delete this;
-    return;
-  }
-
-  if (right_m == nullptr) {
-    if (parent_m == nullptr) {
-      owner_m = left_m;
-    } else if (parent_m->left_m == this) {
-      parent_m->left_m = left_m;
-    } else {
-      parent_m->right_m = left_m;
+    if (oldRight->isLeaf) {
+        swap(this, oldLeft);
+        oldLeft->left = nullptr;
+        delete oldLeft;
+        balanceTree();
+        return;
     }
 
-    left_m->parent_m = parent_m;
+    std::stack<Node*> mustBalansedNodes{{this}};
+    Node* minRight = right;
+    while (!minRight->left->isLeaf) {
+        mustBalansedNodes.push(minRight);
+        minRight = minRight->left;
+    }
 
-    left_m->balanceTree();
+    Node* minRightRight = minRight->right;
 
-    left_m = nullptr;
-    delete this;
-    return;
-  }
+    key = minRight->key;
+    swap(minRight, minRightRight);
+    minRightRight->right = new Node(cmp);
+    delete minRightRight;
 
-  Node *minRight = right_m;
-  while (minRight->left_m) {
-    minRight = minRight->left_m;
-  }
-
-  if (parent_m == nullptr) {
-    owner_m = minRight;
-  } else if (parent_m->left_m == this) {
-    parent_m->left_m = minRight;
-  } else {
-    parent_m->right_m = minRight;
-  }
-
-  left_m->parent_m = minRight;
-  minRight->left_m = left_m;
-
-  if (minRight != right_m) {
-    right_m->parent_m = minRight;
-    minRight->right_m = right_m;
-  }
-
-  if (minRight->parent_m->left_m == minRight) {
-    minRight->parent_m->left_m = nullptr;
-  } else {
-    minRight->parent_m->right_m = nullptr;
-  }
-  minRight->parent_m = parent_m;
-
-  minRight->balanceTree();
-
-  left_m = nullptr;
-  right_m = nullptr;
-  delete this;
+    while (!mustBalansedNodes.empty()) {
+        mustBalansedNodes.top()->balanceTree();
+        mustBalansedNodes.pop();
+    }
 }
 
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::balanceTree() -> void {
-  std::cout << "balanceTree\n";
-  check();
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::balanceTree() noexcept -> void {
+    if (isLeaf) {
+        return;
+    }
 
-  correctHeigth();
+    correctHeigth();
+    correctWeight();
 
-  if (left_m && leftHeight() == rightHeight() + 2 && left_m->leftHeight() >= left_m->rightHeight()) {
-    smallRightRotate();
-  } else if (right_m && leftHeight() + 2 == rightHeight() && right_m->leftHeight() <= right_m->rightHeight()) {
+    if (!right->isLeaf && balanceFactor() < -1) {
+        if (right->balanceFactor() < 0) {
+            smallLeftRotate();
+        } else {
+            bigLeftRotate();
+        }
+    } else if (!left->isLeaf && balanceFactor() > 1) {
+        if (left->balanceFactor() > 0) {
+            smallRightRotate();
+        } else {
+            bigRightRotate();
+        }
+    }
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::smallLeftRotate() noexcept -> void {
+    Node* oldRight = right;
+    swap(this, oldRight);
+    std::swap(left, oldRight->right);
+    left = oldRight;
+
+    left->correctHeigth();
+    left->correctWeight();
+    correctHeigth();
+    correctWeight();
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::smallRightRotate() noexcept -> void {
+    Node* oldLeft = left;
+    swap(this, oldLeft);
+    std::swap(right, oldLeft->left);
+    right = oldLeft;
+
+    right->correctHeigth();
+    right->correctWeight();
+    correctHeigth();
+    correctWeight();
+}
+
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::bigLeftRotate() noexcept -> void {
+    right->smallRightRotate();
     smallLeftRotate();
-  } else if (left_m && leftHeight() == rightHeight() + 2 && left_m->leftHeight() < left_m->rightHeight()) {
-    bigRightRotate();
-  } else if (right_m && leftHeight() + 2 == rightHeight() && right_m->leftHeight() > right_m->rightHeight()) {
-    bigLeftRotate();
-  }
-
-  correctHeigth();
-  correctWeight();
-
-  if (parent_m) {
-    parent_m->balanceTree();
-  }
-
-  correctWeight();
 }
 
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::smallRightRotate() -> void {
-  std::cout << "smallRightRotate\n";
-  check();
-
-  if (parent_m == nullptr) {
-    owner_m = left_m;
-  } else if (parent_m->left_m == this) {
-    parent_m->left_m = left_m;
-  } else {
-    parent_m->right_m = left_m;
-  }
-  left_m->parent_m = parent_m;
-  parent_m = left_m;
-  left_m = parent_m->right_m;
-  if (left_m) {
-    left_m->parent_m = this;
-  }
-  parent_m->right_m = this;
+template <class T, class Compare>
+auto AvlTree<T, Compare>::Node::bigRightRotate() noexcept -> void {
+    left->smallLeftRotate();
+    smallRightRotate();
 }
 
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::smallLeftRotate() -> void {
-  std::cout << "smallLeftRotate\n";
-  check();
+auto run(std::istream& input, std::ostream& output) -> void {
+    int n{};
+    int command{};
+    int argument{};
 
-  if (parent_m == nullptr) {
-    owner_m = right_m;
-  } else if (parent_m->left_m == this) {
-    parent_m->left_m = right_m;
-  } else {
-    parent_m->right_m = right_m;
-  }
-  right_m->parent_m = parent_m;
-  parent_m = right_m;
-  right_m = parent_m->left_m;
-  if (right_m) {
-    right_m->parent_m = this;
-  }
-  parent_m->left_m = this;
-}
+    AvlTree<int> tree{};
 
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::bigRightRotate() -> void {
-  std::cout << "bigRightRotate\n";
-  check();
-
-  left_m->smallLeftRotate();
-  smallRightRotate();
-}
-
-template <class T, class Compare> auto AvlTree<T, Compare>::Node::bigLeftRotate() -> void {
-  std::cout << "bigLeftRotate\n";
-  check();
-
-  right_m->smallRightRotate();
-  smallLeftRotate();
-}
-
-void run(std::istream &input, std::ostream &output) {
-  int n{};
-  int command{};
-  int argument{};
-
-  AvlTree<int> tree{};
-
-  input >> n;
-  for (int i = 0; i < n; ++i) {
-    input >> command >> argument;
-    std::cout << "\n========================================================\n"
-              << command << ' ' << argument << "\n========================================================\n";
-    if (command == 1) {
-      output << tree.add(argument) << '\n';
-    } else {
-      tree.remove(argument);
+    input >> n;
+    for (int i = 0; i < n; ++i) {
+        input >> command >> argument;
+        // std::cout << "\n========================================================\n"
+        //           << command << ' ' << argument << "\n========================================================\n";
+        if (command == 1) {
+            output << tree.add(argument) << '\n';
+        } else {
+            tree.remove(argument);
+        }
+        // tree.print();
     }
-    tree.print();
-  }
 }
 
-void test() {
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "75\n1 41\n1 18467\n2 0\n1 26500\n1 19169\n2 1\n1 11478\n1 29358\n2 "
-             "2\n1 24464\n1 5705\n2 0\n1 23281\n1 16827\n2 1\n1 491\n1 2995\n2 "
-             "0\n1 4827\n1 5436\n2 7\n1 14604\n1 3902\n2 0\n1 292\n1 12382\n2 "
-             "1\n1 18716\n1 19718\n2 7\n1 5447\n1 21726\n2 11\n1 11538\n1 "
-             "1869\n2 9\n1 25667\n1 26299\n2 11\n1 9894\n1 28703\n2 6\n1 "
-             "31322\n1 30333\n2 9\n1 4664\n1 15141\n2 10\n1 28253\n1 6868\n2 "
-             "5\n1 27644\n1 32662\n2 1\n1 20037\n1 12859\n2 3\n1 9741\n1 "
-             "27529\n2 1\n1 12316\n1 3035\n2 14\n1 1842\n1 288\n2 22\n1 9040\n1 "
-             "8942\n2 16\n1 22648\n1 27446\n2 5\n1 15890\n1 6729\n2 8";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "");
-  }
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "10\n1 62\n2 0\n1 292\n1 397\n1 127\n2 2\n1 731\n2 1\n1 653\n1 "
-             "379\n";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "0\n0\n0\n2\n0\n1\n2\n");
-  }
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "10\n1 574\n2 0\n1 691\n1 655\n1 674\n1 398\n2 2\n1 916\n2 0\n1 "
-             "183\n";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "0\n0\n1\n1\n3\n0\n3\n");
-  }
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "10\n1 239\n1 675\n1 559\n2 1\n1 4\n1 968\n1 593\n2 4\n2 1\n1 405\n";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "0\n0\n1\n2\n0\n2\n2\n");
-  }
-  {
-    std::stringstream input;
-    std::stringstream output;
-    input << "10\n1 451\n1 962\n2 0\n2 0\n1 15\n1 507\n2 0\n1 915\n2 1\n1 893\n";
-    run(input, output);
-    std::cout << ">>> " << output.str() << std::endl;
-    assert(output.str() == "0\n0\n0\n0\n0\n1\n");
-  }
+auto test() -> void {
+    {
+        std::ifstream input;
+        input.open("4.1-in");
+        std::stringstream output;
+        std::ifstream outputExp;
+        outputExp.open("4.1-out");
+        run(input, output);
+        int a{};
+        int b{};
+        while ((output >> a) && (outputExp >> b)) {
+            assert(a == b);
+        }
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "5\n1 100\n1 200\n1 50\n2 1\n1 150\n";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() == "0\n0\n2\n1\n");
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "75\n1 41\n1 18467\n2 0\n1 26500\n1 19169\n2 1\n1 11478\n1 29358\n2 "
+                 "2\n1 24464\n1 5705\n2 0\n1 23281\n1 16827\n2 1\n1 491\n1 2995\n2 "
+                 "0\n1 4827\n1 5436\n2 7\n1 14604\n1 3902\n2 0\n1 292\n1 12382\n2 "
+                 "1\n1 18716\n1 19718\n2 7\n1 5447\n1 21726\n2 11\n1 11538\n1 "
+                 "1869\n2 9\n1 25667\n1 26299\n2 11\n1 9894\n1 28703\n2 6\n1 "
+                 "31322\n1 30333\n2 9\n1 4664\n1 15141\n2 10\n1 28253\n1 6868\n2 "
+                 "5\n1 27644\n1 32662\n2 1\n1 20037\n1 12859\n2 3\n1 9741\n1 "
+                 "27529\n2 1\n1 12316\n1 3035\n2 14\n1 1842\n1 288\n2 22\n1 9040\n1 "
+                 "8942\n2 16\n1 22648\n1 27446\n2 5\n1 15890\n1 6729\n2 8";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() ==
+               "0\n0\n0\n1\n1\n0\n2\n3\n2\n3\n4\n4\n3\n3\n2\n6\n8\n2\n0\n0\n5\n0\n5\n11\n0\n0\n8\n0\n0\n1\n13\n8\n3\n11\n4\n0\n"
+               "7\n11\n12\n4\n12\n19\n20\n22\n14\n15\n5\n4\n10\n18\n");
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "10\n1 62\n2 0\n1 292\n1 397\n1 127\n2 2\n1 731\n2 1\n1 653\n1 "
+                 "379\n";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() == "0\n0\n0\n2\n0\n1\n2\n");
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "10\n1 574\n2 0\n1 691\n1 655\n1 674\n1 398\n2 2\n1 916\n2 0\n1 "
+                 "183\n";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() == "0\n0\n1\n1\n3\n0\n3\n");
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "10\n1 239\n1 675\n1 559\n2 1\n1 4\n1 968\n1 593\n2 4\n2 1\n1 405\n";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() == "0\n0\n1\n2\n0\n2\n2\n");
+    }
+    {
+        std::stringstream input;
+        std::stringstream output;
+        input << "10\n1 451\n1 962\n2 0\n2 0\n1 15\n1 507\n2 0\n1 915\n2 1\n1 893\n";
+        run(input, output);
+        std::cout << ">>> " << output.str() << std::endl;
+        assert(output.str() == "0\n0\n0\n0\n0\n1\n");
+    }
 }
 
-int main() {
-  // run(std::cin, std::cout);
-  test();
-  return 0;
+auto main() -> int {
+    run(std::cin, std::cout);
+    // test();
+    return 0;
 }
