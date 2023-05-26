@@ -9,7 +9,7 @@
 template <class T>
 class CompareDefault {
  public:
-    int operator()(const T& a, const T& b) const { return a > b ? 1 : (a == b ? 0 : -1); }
+    [[nodiscard]] inline auto operator()(const T& a, const T& b) const noexcept -> int { return a > b ? 1 : (a == b ? 0 : -1); }
 };
 
 template <class T, class Compare = CompareDefault<T>>
@@ -303,10 +303,10 @@ auto run(std::istream& input, std::ostream& output) -> void {
 auto test() -> void {
     {
         std::ifstream input;
-        input.open("4.1-in");
+        input.open("4.1-in.a");
         std::stringstream output;
         std::ifstream outputExp;
-        outputExp.open("4.1-out");
+        outputExp.open("4.1-out.a");
         run(input, output);
         int a{};
         int b{};
