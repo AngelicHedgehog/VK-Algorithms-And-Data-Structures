@@ -3,25 +3,56 @@
 #include <sstream>
 #include <vector>
 
-auto run(std::istream& input, std::ostream& output) -> void {
-    int vertexCount{};
-    int edgeCount{};
+class ListGraph {
+ public:
+    ListGraph(int vertexCount);
+
+    auto AddEdge(int from, int to, int weight) -> void;
+
+    [[nodiscard]] auto VerticesCount() const noexcept -> int;
+
+    [[nodiscard]] auto GetNextVertices(int vertex) const -> std::vector<std::pair<int, int>>;
+
+ private:
+    std::vector<std::vector<std::pair<int, int>>> m_adjacencyLists;
+};
+
+ListGraph::ListGraph(int vertexCount) : m_adjacencyLists(vertexCount) {}
+
+auto ListGraph::AddEdge(int from, int to, int weight) -> void {
+    assert(from >= 0 && static_cast<std::size_t>(from) < m_adjacencyLists.size());
+    assert(to >= 0 && static_cast<std::size_t>(to) < m_adjacencyLists.size());
+
+    m_adjacencyLists[from].push_back({to, weight});
+    m_adjacencyLists[to].push_back({from, weight});
+}
+
+auto ListGraph::VerticesCount() const noexcept -> int {
+    return m_adjacencyLists.size();
+}
+
+auto ListGraph::GetNextVertices(int vertex) const -> std::vector<std::pair<int, int>> {
+    assert(vertex >= 0 && static_cast<std::size_t>(vertex) < m_adjacencyLists.size());
+
+    return m_adjacencyLists[vertex];
+}
+
+auto readInput(std::istream& input, int& vertexCount, int& edgeCount, ListGraph& graph, int& startVertex, int& stopVertex) -> void {
     input >> vertexCount >> edgeCount;
 
-    std::vector<std::vector<std::pair<int, int>>> graph(vertexCount);
+    graph = ListGraph{vertexCount};
     int vertexFrom{};
     int vertexTo{};
     int weight{};
     for (int i = 0; i != edgeCount; ++i) {
         input >> vertexFrom >> vertexTo >> weight;
-        graph[vertexFrom].push_back({vertexTo, weight});
-        graph[vertexTo].push_back({vertexFrom, weight});
+        graph.AddEdge(vertexFrom, vertexTo, weight);
     }
 
-    int startVertex{};
-    int stopVertex{};
     input >> startVertex >> stopVertex;
+}
 
+auto lenShortestWay(int vertexCount, const ListGraph& graph, int startVertex, int stopVertex) -> int {
     std::vector<int> vertexWayWeight(vertexCount, -1);
     vertexWayWeight[startVertex] = 0;
     std::vector<bool> visitedVertex(vertexCount, false);
@@ -34,15 +65,14 @@ auto run(std::istream& input, std::ostream& output) -> void {
                 minIt = it;
             }
         }
-        vertexFrom = *minIt;
+        int vertexFrom = *minIt;
         vertexPriorityQueue.erase(minIt);
 
         if (vertexFrom == stopVertex) {
-            output << vertexWayWeight[vertexFrom];
-            return;
+            return vertexWayWeight[vertexFrom];
         }
 
-        for (const auto& edge : graph[vertexFrom]) {
+        for (const auto& edge : graph.GetNextVertices(vertexFrom)) {
             if (visitedVertex[edge.first]) {
                 continue;
             }
@@ -62,7 +92,18 @@ auto run(std::istream& input, std::ostream& output) -> void {
         visitedVertex[vertexFrom] = true;
     }
 
-    output << -1;
+    return -1;
+}
+
+auto run(std::istream& input, std::ostream& output) -> void {
+    int vertexCount{};
+    int edgeCount{};
+    ListGraph graph(0);
+    int startVertex{};
+    int stopVertex{};
+    readInput(input, vertexCount, edgeCount, graph, startVertex, stopVertex);
+
+    output << lenShortestWay(vertexCount, graph, startVertex, stopVertex);
 }
 
 auto test() -> void {

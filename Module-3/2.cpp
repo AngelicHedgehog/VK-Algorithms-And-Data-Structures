@@ -5,24 +5,55 @@
 #include <unordered_set>
 #include <vector>
 
-auto run(std::istream& input, std::ostream& output) -> void {
-    int vertexCount{};
-    int edgeCount{};
+class ListGraph {
+ public:
+    ListGraph(int vertexCount);
+
+    auto AddEdge(int from, int to) -> void;
+
+    [[nodiscard]] auto VerticesCount() const noexcept -> int;
+
+    [[nodiscard]] auto GetNextVertices(int vertex) const -> std::vector<int>;
+
+ private:
+    std::vector<std::vector<int>> m_adjacencyLists;
+};
+
+ListGraph::ListGraph(int vertexCount) : m_adjacencyLists(vertexCount) {}
+
+auto ListGraph::AddEdge(int from, int to) -> void {
+    assert(from >= 0 && static_cast<std::size_t>(from) < m_adjacencyLists.size());
+    assert(to >= 0 && static_cast<std::size_t>(to) < m_adjacencyLists.size());
+
+    m_adjacencyLists[from].push_back(to);
+    m_adjacencyLists[to].push_back(from);
+}
+
+auto ListGraph::VerticesCount() const noexcept -> int {
+    return m_adjacencyLists.size();
+}
+
+auto ListGraph::GetNextVertices(int vertex) const -> std::vector<int> {
+    assert(vertex >= 0 && static_cast<std::size_t>(vertex) < m_adjacencyLists.size());
+
+    return m_adjacencyLists[vertex];
+}
+
+auto readInput(std::istream& input, int& vertexCount, int& edgeCount, ListGraph& graph, int& startVertex, int& stopVertex) -> void {
     input >> vertexCount >> edgeCount;
 
-    std::vector<std::vector<int>> graph(vertexCount);
+    graph = ListGraph{vertexCount};
     int vertexFrom{};
     int vertexTo{};
     for (int i = 0; i != edgeCount; ++i) {
         input >> vertexFrom >> vertexTo;
-        graph[vertexFrom].push_back(vertexTo);
-        graph[vertexTo].push_back(vertexFrom);
+        graph.AddEdge(vertexFrom, vertexTo);
     }
 
-    int startVertex{};
-    int stopVertex{};
     input >> startVertex >> stopVertex;
+}
 
+auto findCountWays(int& vertexCount, const ListGraph& graph, int startVertex, int stopVertex) -> int {
     std::vector<int> vertexWaysCount(vertexCount);
     vertexWaysCount[startVertex] = 1;
     std::vector<bool> visitedVertex(vertexCount, false);
@@ -31,14 +62,13 @@ auto run(std::istream& input, std::ostream& output) -> void {
     std::queue<int> newVertexQueue{};
     while (!vertexQueue.empty()) {
         for (; !vertexQueue.empty(); vertexQueue.pop()) {
-            vertexFrom = vertexQueue.front();
+            int vertexFrom = vertexQueue.front();
 
             if (vertexFrom == stopVertex) {
-                output << vertexWaysCount[vertexFrom];
-                return;
+                return vertexWaysCount[vertexFrom];
             }
 
-            for (const auto& vertexTo : graph[vertexFrom]) {
+            for (const auto& vertexTo : graph.GetNextVertices(vertexFrom)) {
                 if (visitedVertex[vertexTo]) {
                     continue;
                 }
@@ -56,7 +86,19 @@ auto run(std::istream& input, std::ostream& output) -> void {
         }
     }
 
-    output << 0;
+    return 0;
+}
+
+auto run(std::istream& input, std::ostream& output) -> void {
+    int vertexCount{};
+    int edgeCount{};
+    ListGraph graph(0);
+    int startVertex{};
+    int stopVertex{};
+
+    readInput(input, vertexCount, edgeCount, graph, startVertex, stopVertex);
+
+    output << findCountWays(vertexCount, graph, startVertex, stopVertex);
 }
 
 auto test() -> void {
